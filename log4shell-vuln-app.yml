@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log4shell-vuln-java
+  namespace: default
+  labels:
+    app: log4shell-vuln-java
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log4shell-vuln-java
+  template:
+    metadata:
+      labels:
+        app: log4shell-vuln-java
+    spec:
+      containers:
+      - name: log4shell-vuln-java
+        image: ghcr.io/christophetd/log4shell-vulnerable-app  ## image is a vulnerable java app with port 8080 exposed
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log4shell-vuln-java-service
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: log4shell-vuln-java
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: log4shell-vuln-java-ingress
+  namespace: default
+  annotations:
+spec:
+  rules:
+  - host: "localhost.localdev"  # Your hostname - set this up in local hosts file if developing on local k3s
+    http:
+      paths:
+      # Path-based routing settings:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: log4shell-vuln-java-service  # The name of the service
+            port:
+              number: 8080  # Service Portnumber
